@@ -1,0 +1,48 @@
+#include <Servo.h>
+
+Servo testServo;
+
+const int servoPin = 3;     // Shared servo for both finger & elbow SysID
+const int potPin = A0;      // Potentiometer pin connected to the servo
+
+unsigned long startTime;
+int angle = 0;
+int stepSize = 5;
+int direction = 1;
+
+void setup() {
+  Serial.begin(115200);
+  testServo.attach(servoPin);
+  startTime = micros();
+
+  // CSV Header
+  Serial.println("time_s,pwm_input,output_deg");
+}
+
+void loop() {
+  // Send angle to servo
+  testServo.write(angle);  // range: 0–135°
+  
+  // Read potentiometer (output)
+  int potRaw = analogRead(potPin);  // 0–1023
+  float potDeg = potRaw * 135.0 / 1023.0;  // Calibrate to 0–135°
+
+  // Time (s)
+  float t = (micros() - startTime) / 1000.0;
+
+  // Convert angle to equivalent PWM scale (optional)
+  int pwm = map(angle, 0, 135, 0, 255);
+
+  // Log as CSV
+  Serial.print(t, 3);
+  Serial.print(",");
+  Serial.print(pwm);
+  Serial.print(",");
+  Serial.println(potDeg, 2);
+
+  // Update sweep
+  angle += direction * stepSize;
+  if (angle >= 135 || angle <= 0) direction *= -1;
+
+  delay(20);  // 50 Hz
+}
